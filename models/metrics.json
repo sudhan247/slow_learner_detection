@@ -1,0 +1,24 @@
+{
+  "accuracy": 0.9,
+  "precision": 0.8953761904761904,
+  "recall": 0.9,
+  "f1_score": 0.8956748152653579,
+  "cv_mean": 0.9199999999999999,
+  "cv_std": 0.020976176963403006,
+  "classes": [
+    "High Risk",
+    "Low Risk",
+    "Medium Risk"
+  ],
+  "feature_names": [
+    "attendance",
+    "assignment_score",
+    "internal_marks",
+    "quiz_score",
+    "previous_semester_marks",
+    "average_score",
+    "attendance_ratio",
+    "performance_drop",
+    "score_variance"
+  ]
+}

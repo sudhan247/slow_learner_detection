@@ -1,0 +1,29 @@
+# Requirements
+# Project: IDENTIFY SLOW LEARNERS FOR REMEDIAL TEACHING AND CAPACITY BUILDING FOR INNOVATIVE METHODS
+# Python 3.10+
+
+# Data
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Machine Learning
+scikit-learn>=1.3.0
+joblib>=1.3.0
+
+# Visualisation
+plotly>=5.18.0
+matplotlib>=3.8.0
+seaborn>=0.13.0
+statsmodels>=0.14.0
+
+# Backend
+flask>=3.0.0
+flask-cors>=4.0.0
+werkzeug>=3.0.0
+PyJWT>=2.8.0
+
+# Frontend
+streamlit>=1.32.0
+
+# HTTP client
+requests>=2.31.0
