@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
 
-API_BASE    = "http://localhost:5000"
+API_BASE    = "http://localhost:5001"
 RISK_COLORS = {"High Risk": "#ef4444", "Medium Risk": "#f59e0b", "Low Risk": "#06b6d4"}
 PLOTLY_BASE = dict(
     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",

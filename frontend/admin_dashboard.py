@@ -13,7 +13,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
 
-API_BASE    = "http://localhost:5000"
+API_BASE    = "http://localhost:5001"
 ROOT        = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RISK_COLORS = {"High Risk": "#ef4444", "Medium Risk": "#f59e0b", "Low Risk": "#06b6d4"}
 PLOTLY_BASE = dict(

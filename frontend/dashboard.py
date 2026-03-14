@@ -120,7 +120,7 @@ def _render_sidebar() -> None:
         st.markdown('<p class="section-title">System Status</p>', unsafe_allow_html=True)
         try:
             import requests
-            r = requests.get("http://localhost:5000/health", timeout=2)
+            r = requests.get("http://localhost:5001/health", timeout=2)
             if r.status_code == 200:
                 st.success("Flask API — Online")
             else:

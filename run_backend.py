@@ -10,6 +10,6 @@ from backend.app import app
 if __name__ == "__main__":
     print("=" * 55)
     print("  SLOW LEARNER DETECTION - Flask API v2.0")
-    print("  http://127.0.0.1:5000")
+    print("  http://127.0.0.1:5001")
     print("=" * 55)
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(debug=True, host="0.0.0.0", port=5001)
