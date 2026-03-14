@@ -149,11 +149,51 @@ def load_csv_to_db(csv_path: str | None = None) -> bool:
     if not os.path.exists(csv_path):
         return False
 
-    df   = pd.read_csv(csv_path)
+    df = pd.read_csv(csv_path)
+
+    # Calculate derived fields if missing
+    if "faculty_id" not in df.columns:
+        df["faculty_id"] = "FAC001"
+
+    if "average_score" not in df.columns:
+        score_cols = ["assignment_score", "internal_marks", "quiz_score"]
+        available = [c for c in score_cols if c in df.columns]
+        if available:
+            df["average_score"] = df[available].mean(axis=1).round(2)
+
+    if "attendance_ratio" not in df.columns and "attendance" in df.columns:
+        df["attendance_ratio"] = (df["attendance"] / 100).round(4)
+
+    if "performance_drop" not in df.columns:
+        if "previous_semester_marks" in df.columns and "average_score" in df.columns:
+            df["performance_drop"] = (df["previous_semester_marks"] - df["average_score"]).round(2)
+
+    if "score_variance" not in df.columns:
+        score_cols = ["assignment_score", "internal_marks", "quiz_score"]
+        available = [c for c in score_cols if c in df.columns]
+        if len(available) >= 2:
+            df["score_variance"] = df[available].var(axis=1).round(2)
+
+    # Calculate risk_level if missing
+    if "risk_level" not in df.columns:
+        def calc_risk(row):
+            avg = row.get("average_score", 0) or 0
+            att = row.get("attendance", 0) or 0
+            if att >= 85 and avg >= 75:
+                return "Low Risk"
+            elif att >= 70 and avg >= 55:
+                return "Medium Risk"
+            else:
+                return "High Risk"
+        df["risk_level"] = df.apply(calc_risk, axis=1)
+
     conn = _conn()
 
+    # Clear existing data before loading new data
+    conn.execute("DELETE FROM students")
+
     sql = (
-        "INSERT OR IGNORE INTO students"
+        "INSERT INTO students"
         " (student_id, faculty_id, attendance, assignment_score, internal_marks,"
         "  quiz_score, previous_semester_marks, average_score, attendance_ratio,"
         "  performance_drop, score_variance, risk_level)"

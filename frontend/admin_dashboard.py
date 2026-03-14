@@ -289,8 +289,12 @@ def render_admin_dashboard() -> None:
 
     # ── TAB 3: Data Management ─────────────────────────────────────────────────
     with tab3:
+        # Show success message if data was just uploaded
+        if st.session_state.get("upload_success"):
+            st.success(st.session_state.pop("upload_success"))
+
         st.markdown("### 📁 Dataset Upload")
-        uploaded = st.file_uploader("Upload student CSV file", type=["csv"])
+        uploaded = st.file_uploader("Upload student CSV file", type=["csv"], key="csv_uploader")
         if uploaded:
             if st.button("Upload & Load into Database", use_container_width=True):
                 with st.spinner("Uploading…"):
@@ -301,12 +305,104 @@ def render_admin_dashboard() -> None:
                             headers=_auth_header(), timeout=20,
                         )
                         if r.status_code == 200:
-                            st.success("Dataset uploaded and loaded into database.")
                             st.cache_data.clear()
+                            st.session_state["upload_success"] = "Dataset uploaded and loaded into database."
+                            st.rerun()
                         else:
                             st.error(r.json().get("error", "Upload failed."))
                     except Exception as exc:
                         st.error(f"Upload error: {exc}")
+
+        st.markdown("---")
+        st.markdown("### 🔗 External Database Connection")
+        st.markdown("""
+        <div class="info-box">
+            <p style="color:rgba(255,255,255,.7);font-size:.85rem;margin:0">
+                Connect to an external database (PostgreSQL, MySQL, SQLite, SQL Server, Oracle, MariaDB)
+                to import student data directly. Use SQLAlchemy connection string format.
+            </p>
+        </div>""", unsafe_allow_html=True)
+
+        # Show success message if external data was just loaded
+        if st.session_state.get("ext_db_success"):
+            st.success(st.session_state.pop("ext_db_success"))
+
+        # Initialize session state for external DB workflow
+        if "ext_db_tables" not in st.session_state:
+            st.session_state.ext_db_tables = []
+        if "ext_db_connected" not in st.session_state:
+            st.session_state.ext_db_connected = False
+
+        # Connection string input
+        ext_conn_string = st.text_input(
+            "Connection String",
+            placeholder="mysql+pymysql://user:pass@host:3306/database",
+            help="Examples: postgresql://user:pass@host:5432/db, mysql+pymysql://user:pass@host:3306/db, sqlite:///path/to/file.db"
+        )
+
+        st.markdown("""
+        <p style="color:rgba(255,255,255,.5);font-size:.75rem;margin-top:-10px">
+            Required columns: student_id, attendance, assignment_score, internal_marks, quiz_score, previous_semester_marks
+        </p>""", unsafe_allow_html=True)
+
+        col_test, col_clear = st.columns([1, 1])
+        with col_test:
+            if st.button("Test Connection", use_container_width=True, disabled=not ext_conn_string):
+                with st.spinner("Testing connection..."):
+                    try:
+                        r = requests.post(
+                            f"{API_BASE}/external_db/test",
+                            json={"connection_string": ext_conn_string},
+                            headers=_auth_header(), timeout=15,
+                        )
+                        result = r.json()
+                        if result.get("success"):
+                            st.session_state.ext_db_connected = True
+                            st.session_state.ext_db_tables = result.get("tables", [])
+                            st.success(f"Connected! Found {len(result.get('tables', []))} tables.")
+                        else:
+                            st.session_state.ext_db_connected = False
+                            st.error(result.get("message", "Connection failed"))
+                    except Exception as exc:
+                        st.session_state.ext_db_connected = False
+                        st.error(f"Connection error: {exc}")
+
+        with col_clear:
+            if st.button("Clear", use_container_width=True):
+                st.session_state.ext_db_connected = False
+                st.session_state.ext_db_tables = []
+                st.rerun()
+
+        # Show table selection and load button if connected
+        if st.session_state.ext_db_connected and st.session_state.ext_db_tables:
+            selected_table = st.selectbox(
+                "Select Table",
+                options=st.session_state.ext_db_tables,
+                help="Select the table containing student data"
+            )
+
+            if st.button("Load Data", type="primary", use_container_width=True):
+                with st.spinner("Loading data from external database..."):
+                    try:
+                        r = requests.post(
+                            f"{API_BASE}/external_db/load",
+                            json={
+                                "connection_string": ext_conn_string,
+                                "table": selected_table,
+                            },
+                            headers=_auth_header(), timeout=60,
+                        )
+                        result = r.json()
+                        if result.get("success"):
+                            st.cache_data.clear()
+                            st.session_state.ext_db_connected = False
+                            st.session_state.ext_db_tables = []
+                            st.session_state["ext_db_success"] = f"Successfully loaded {result.get('rows_loaded', 0)} records!"
+                            st.rerun()
+                        else:
+                            st.error(result.get("message", "Failed to load data"))
+                    except Exception as exc:
+                        st.error(f"Load error: {exc}")
 
         st.markdown("---")
         st.markdown("### 🤖 Model Retraining")

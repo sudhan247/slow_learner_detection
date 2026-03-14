@@ -27,3 +27,8 @@ streamlit>=1.32.0
 
 # HTTP client
 requests>=2.31.0
+
+# External Database Support
+SQLAlchemy>=2.0.0
+pymysql>=1.1.0
+psycopg2-binary>=2.9.0

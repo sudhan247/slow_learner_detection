@@ -24,6 +24,12 @@ from backend.database        import (
 )
 from backend.model_handler   import predict_risk, get_model_metrics, engineer_features
 from backend.recommendation  import get_recommendations
+from backend.external_db     import (
+    test_connection as ext_test_connection,
+    get_tables as ext_get_tables,
+    get_columns as ext_get_columns,
+    load_data as ext_load_data,
+)
 
 api = Blueprint("api", __name__)
 
@@ -283,3 +289,83 @@ def retrain():
     except Exception:
         traceback.print_exc()
         return jsonify({"error": "Retraining failed"}), 500
+
+
+# ── External Database ─────────────────────────────────────────────────────────
+@api.route("/external_db/test", methods=["POST"])
+@role_required("admin")
+def external_db_test():
+    """
+    POST /external_db/test
+    Body: { connection_string }
+    Returns: { success, message, tables }
+    """
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        conn_string = str(data.get("connection_string", "")).strip()
+
+        if not conn_string:
+            return jsonify({"error": "Connection string is required"}), 400
+
+        result = ext_test_connection(conn_string)
+        return jsonify(result), 200 if result["success"] else 400
+
+    except Exception:
+        traceback.print_exc()
+        return jsonify({"error": "Connection test failed"}), 500
+
+
+@api.route("/external_db/tables", methods=["POST"])
+@role_required("admin")
+def external_db_tables():
+    """
+    POST /external_db/tables
+    Body: { connection_string, table (optional) }
+    Returns: { success, tables } or { success, columns } if table specified
+    """
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        conn_string = str(data.get("connection_string", "")).strip()
+        table = data.get("table")
+
+        if not conn_string:
+            return jsonify({"error": "Connection string is required"}), 400
+
+        if table:
+            # Get columns for specific table
+            result = ext_get_columns(conn_string, table)
+        else:
+            # Get list of tables
+            result = ext_get_tables(conn_string)
+
+        return jsonify(result), 200 if result["success"] else 400
+
+    except Exception:
+        traceback.print_exc()
+        return jsonify({"error": "Failed to fetch tables/columns"}), 500
+
+
+@api.route("/external_db/load", methods=["POST"])
+@role_required("admin")
+def external_db_load():
+    """
+    POST /external_db/load
+    Body: { connection_string, table }
+    Returns: { success, message, rows_loaded }
+    """
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        conn_string = str(data.get("connection_string", "")).strip()
+        table = str(data.get("table", "")).strip()
+
+        if not conn_string:
+            return jsonify({"error": "Connection string is required"}), 400
+        if not table:
+            return jsonify({"error": "Table name is required"}), 400
+
+        result = ext_load_data(conn_string, table)
+        return jsonify(result), 200 if result["success"] else 400
+
+    except Exception:
+        traceback.print_exc()
+        return jsonify({"error": "Failed to load data"}), 500
